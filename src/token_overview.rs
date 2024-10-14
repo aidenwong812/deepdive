@@ -63,6 +63,24 @@ pub struct TokenOverviewData {
     pub history_24h_price: f64,
     #[serde(rename = "numberMarkets")]
     pub number_markets: i64,
+    #[serde(rename = "buy1h")]
+    pub buy_1h: i64,
+    #[serde(rename = "sell1h")]
+    pub sell_1h: i64,
+    #[serde(rename = "buy24h")]
+    pub buy_24h: i64,
+    #[serde(rename = "sell24h")]
+    pub sell_24h: i64,
+
+    #[serde(rename = "v1hUSD")]
+    pub volume_1h: f64,
+    #[serde(rename = "v6hUSD")]
+    pub volume_6h: f64,
+    #[serde(rename = "v24hUSD")]
+    pub volume_24h: f64,
+
+
+
 
    
 }

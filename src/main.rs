@@ -5,7 +5,7 @@ use teloxide::{
 };
 // use serde::{Deserialize, Serialize,};
 // use core::error;
-use reqwest::Client;
+use reqwest::{Client, Url};
 use std::env;
 use dotenv::dotenv;
 use token_overview::{TokenOverview, TokenOverviewData};
@@ -75,46 +75,57 @@ async fn make_token_overview_message(token_data: &TokenOverviewData) -> Result<S
     let symbol = &token_data.symbol;
     let liquidity = token_data.liquidity;
     let price = token_data.price;
-    let price_change_30m_percent = token_data.price_change_30m_percent.expect("Invalid operation to get 30m price change percent");
-    let price_change_1h_percent = token_data.price_change_1h_percent.expect("Invalid operation to get 1h price change percent");
-    let price_change_24h_percent = token_data.price_change_24h_percent.expect("Invalid operation to get 24h price change percent");
-    let buy_1h_change_percent = token_data.buy_1h_change_percent.expect("Invalid operation to get 1h buy percent");
-    let buy_24h_change_percent = token_data.buy_24h_change_percent.expect("Invalid operation to get 24h buy percent");
-    let volume_1h = token_data.history_1h_price;
-    let volume_6h = token_data.history_6h_price;
-    let volume_24h = token_data.history_24h_price;
+    let price_change_1h_percent = num_floating_point(&(token_data.price_change_1h_percent.expect("Invalid operation to get 1h price change percent")), 4).await?;
+    let price_change_6h_percent = num_floating_point(&(token_data.price_change_6h_percent.expect("Invalid operation to get 6h price change percent")), 4).await?;
+    let price_change_24h_percent = num_floating_point(&(token_data.price_change_24h_percent.expect("Invalid operation to get 24h price change percent")), 4).await?;
+
+    let buy_trade_1h = token_data.buy_1h;
+    let sell_trade_1h = token_data.sell_1h;
+    let buy_trade_24h = token_data.buy_24h;
+    let sell_trade_24h = token_data.sell_24h;
+
+    let volume_1h = controll_big_float(token_data.volume_1h).await?;
+    let volume_6h = controll_big_float(token_data.volume_6h).await?;
+    let volume_24h = controll_big_float(token_data.volume_24h).await?;
+
+    let url_1 = "https://t.me/callanalyserbot";
     
-    let text = format!("
-    symbol: {name} ({symbol})
-    ⛓ SUI
+    
+    let text_1 = format!("⛓ SUI
     👥 Socials: 🌐💬🐦
     ➖➖➖➖➖➖
-    🔎 Top 10 holders: 21.36% 🚨, no mint, liquidity burned, no blacklist
     
     {token_address}
     
-    📊 MCap:   | ATH: $386.07K
     🏷 Price: ${price}
     💧 Liq: ${liquidity} 
-            └🔥 100.00% Burned
     
     📉 Price Changes:
-            30m: {price_change_30m_percent}% | 1h: {price_change_1h_percent}% | 24h: {price_change_24h_percent}%
+            1h: {price_change_1h_percent}%   |   6h: {price_change_6h_percent}%   |   24h: {price_change_24h_percent}%
     🎚 Volume:
-            1h: ${volume_1h} | 6h: ${volume_6h} | 24h: ${volume_24h}
+            1h: ${volume_1h}  |  6h:  ${volume_6h}  |  24h:  ${volume_24h}
     🔄 Buys/Sells:
-            1h: 0/0 | 24h: 0/3
-    🔄 Buy percentage:
-            1h: {buy_1h_change_percent} | 24h: {buy_24h_change_percent}
+            1h: {buy_trade_1h}/{sell_trade_1h}   |   24h: {buy_trade_24h}/{sell_trade_24h}
     
     🧳 Holders: 320
     ⏳ Age: 154d 5h 3m
-    📡 Check for Calls ❎ Search on 𝕏
     
-    🎯 PIRBX | Maestro | Maestro Pro
-    ");
+    📡 Check for Calls {url_1} ❎ Search on 𝕏
+    
+    🎯 PIRBX | Maestro | Maestro Pro");
+        
+    // let text = format!(
+    //     "{}\n\n[{}]({})\n{}",
+    //     text_1,
+    //     "📡 Check for Calls",
+    //     "https://t.me/callanalyserbot",
+    //     "
+    // 📡 Check for Calls ❎ Search on 𝕏
+    
+    // 🎯 PIRBX | Maestro | Maestro Pro
+    // ");
 
-    Ok(text)
+    Ok(text_1)
 
 }
 
@@ -136,8 +147,14 @@ async fn answer(bot: Bot, msg: Message, cmd: Command, token_adr: &str, api_key: 
             let token_data = token_overview.data;            
             let text = make_token_overview_message(&token_data).await?;
 
-            bot.send_message(msg.chat.id, text)              
-                .await?
+            bot.send_message(msg.chat.id, 
+                text                
+                )                
+            // .markdown_v2()
+            // .reply_markup(ReplyMarkup::InlineKeyboard(vec![
+            //     InlineKeyboardButton::callback("Open Link", "open_link")
+            // ]))
+            .await?  
         },
         Command::Jito => {
             bot.send_message(msg.chat.id, "Welcome to HyperLoop! 🎉")              
@@ -163,5 +180,25 @@ async fn message_handler(bot: Bot, msg: Message, me: Me) -> ResponseResult<()> {
     }
 
     Ok(())
+}
+
+async fn num_floating_point(num: &f64, length: i32) -> Result<f64, reqwest::Error> {
+    let num_floating = ((num * 10_f64.powi(length as i32)).round()) / 10_f64.powi(length as i32);    
+    Ok(num_floating)
+}
+
+async fn controll_big_float(num: f64) -> Result<String, reqwest::Error> {
+    
+    let mut result_num = 0.0;
+    let mut result_text = String::from("");
+    if num > 1000000.0 {
+        // result_num = num_floating_point(&(num / 1000000.0), 1).await?;
+        result_text = format!("{:.1}M", num / 1000000.0);
+    } else if num > 1000.0 {
+        result_text = format!("{:.2}K", num / 1000.0);
+    }
+
+    // Ok(result_num);
+    Ok(result_text)
 }
 
