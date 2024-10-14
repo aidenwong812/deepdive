@@ -204,7 +204,6 @@ async fn num_floating_point(num: &f64, length: i32) -> Result<f64, reqwest::Erro
 
 async fn controll_big_float(num: f64) -> Result<String, reqwest::Error> {
     
-    let mut result_num = 0.0;
     let mut result_text = String::from("");
     if num > 1000000.0 {
         result_text = format!("{:.1}M", num / 1000000.0);
