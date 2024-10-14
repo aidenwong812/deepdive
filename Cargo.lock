@@ -3,22 +3,6 @@
 version = 3
 
 [[package]]
-name = "Sui_Monitor_OnBirdeye"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "birdeye_rs",
- "dotenv",
- "log",
- "pretty_env_logger",
- "reqwest",
- "serde",
- "serde_json",
- "teloxide",
- "tokio",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -265,6 +249,22 @@ dependencies = [
  "darling_core",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "deepdive"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "birdeye_rs",
+ "dotenv",
+ "log",
+ "pretty_env_logger",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "teloxide",
+ "tokio",
 ]
 
 [[package]]

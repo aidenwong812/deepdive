@@ -1,5 +1,5 @@
 [package]
-name = "Sui_Monitor_OnBirdeye"
+name = "deepdive"
 version = "0.1.0"
 edition = "2021"
 
