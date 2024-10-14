@@ -1,8 +1,9 @@
 use teloxide::{
     prelude::*,
-    types::{Me, MessageKind},
+    types::{Me, MessageKind, InlineKeyboardButton},
     utils::command::BotCommands,
 };
+// use teloxide::requests::{ParseMode, ReplyMarkup};
 // use serde::{Deserialize, Serialize,};
 // use core::error;
 use reqwest::{Client, Url};
@@ -69,6 +70,23 @@ async fn get_token_overview(token_address: &str, api_key: &str) -> Result<TokenO
     Ok(object)
 }
 
+// async fn get_token_creation_info(token_address: &str, api_key: &str) -> Result<TokenOverview, reqwest::Error> {
+//     let url = format!("https://public-api.birdeye.so/defi/token_creation_info?address={}", token_address);
+//     let client = Client::new();
+    
+//     let response = client
+//         .get(&url)
+//         .header("X-API-KEY", api_key)
+//         .header("x-chain", "sui")
+//         .send()
+//         .await?;
+//     let text = response.text().await.expect("Not available to get response body");
+//     let object: TokenOverview = serde_json::from_str(&text).expect("Invalid response parameters!!");
+
+//     Ok(object)
+// }
+
+
 async fn make_token_overview_message(token_data: &TokenOverviewData) -> Result<String, reqwest::Error> {
     let token_address = &token_data.address;
     let name = &token_data.name;
@@ -88,11 +106,12 @@ async fn make_token_overview_message(token_data: &TokenOverviewData) -> Result<S
     let volume_6h = controll_big_float(token_data.volume_6h).await?;
     let volume_24h = controll_big_float(token_data.volume_24h).await?;
 
-    let url_1 = "https://t.me/callanalyserbot";
+    let url = "https://t.me/callanalyserbot";
+    // let url = "<a href='https://t.me/callanalyserbot'>click for a call</a>";
     
     
     let text_1 = format!("⛓ SUI
-    👥 Socials: 🌐💬🐦
+    🪙 {name}        ({symbol})
     ➖➖➖➖➖➖
     
     {token_address}
@@ -110,21 +129,13 @@ async fn make_token_overview_message(token_data: &TokenOverviewData) -> Result<S
     🧳 Holders: 320
     ⏳ Age: 154d 5h 3m
     
-    📡 Check for Calls {url_1} ❎ Search on 𝕏
+    📡<a href=\"https://t.me/callanalyserbot\">Check for Calls</a>  ❎ <a href=\"https://twitter.com/search?q={token_address}=typed_query&f=live\"> Search on 𝕏 </a>
     
-    🎯 PIRBX | Maestro | Maestro Pro");
-        
-    // let text = format!(
-    //     "{}\n\n[{}]({})\n{}",
-    //     text_1,
-    //     "📡 Check for Calls",
-    //     "https://t.me/callanalyserbot",
-    //     "
-    // 📡 Check for Calls ❎ Search on 𝕏
-    
-    // 🎯 PIRBX | Maestro | Maestro Pro
-    // ");
+    📈<a href=\"https://dexscreener.com/sui/{token_address}\"> DexS </a>
 
+    Ads: <a href=\"https://bit.ly/3TYlUWc\"> Comment & repost memes - get USD₮! 🤑 Launch & trade memecoins - claim $100. NO launch & tx fees, 10% ref bonus. 💰Earn on Meme Money Maker - multichain memepad!</a>
+    ");
+        
     Ok(text_1)
 
 }
@@ -147,14 +158,17 @@ async fn answer(bot: Bot, msg: Message, cmd: Command, token_adr: &str, api_key: 
             let token_data = token_overview.data;            
             let text = make_token_overview_message(&token_data).await?;
 
-            bot.send_message(msg.chat.id, 
-                text                
-                )                
-            // .markdown_v2()
-            // .reply_markup(ReplyMarkup::InlineKeyboard(vec![
-            //     InlineKeyboardButton::callback("Open Link", "open_link")
-            // ]))
-            .await?  
+            bot
+            .send_message(msg.chat.id, text)
+            .parse_mode(teloxide::types::ParseMode::Html).await?
+            // bot.send_message(msg.chat.id, 
+            //     text,             
+            //     )                
+            // // .markdown_v2()
+            // // .reply_markup(ReplyMarkup::InlineKeyboard(vec![
+            // //     InlineKeyboardButton::callback("Open Link", "open_link")
+            // // ]))
+            // .await?  
         },
         Command::Jito => {
             bot.send_message(msg.chat.id, "Welcome to HyperLoop! 🎉")              
