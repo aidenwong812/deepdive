@@ -1,11 +1,8 @@
 use teloxide::{
     prelude::*,
-    types::{Me, MessageKind, InlineKeyboardButton},
+    types::{Me, MessageKind},
     utils::command::BotCommands,
 };
-// use teloxide::requests::{ParseMode, ReplyMarkup};
-// use serde::{Deserialize, Serialize,};
-// use core::error;
 use reqwest::Client;
 use std::env;
 use dotenv::dotenv;
@@ -187,7 +184,6 @@ async fn answer(bot: Bot, msg: Message, cmd: Command, api_key: &str ) -> Respons
 async fn message_handler(bot: Bot, msg: Message, me: Me) -> ResponseResult<()> {
     dotenv().ok();
     let api_key = env::var("API_KEY").expect("API_KEY not set");
-    // let token_address =  env::var("TOKEN_ADDRESS").expect("API_KEY not set");
 
     if let MessageKind::WebAppData(data) = msg.kind {
         bot.send_message(msg.chat.id, data.web_app_data.data)
@@ -211,13 +207,11 @@ async fn controll_big_float(num: f64) -> Result<String, reqwest::Error> {
     let mut result_num = 0.0;
     let mut result_text = String::from("");
     if num > 1000000.0 {
-        // result_num = num_floating_point(&(num / 1000000.0), 1).await?;
         result_text = format!("{:.1}M", num / 1000000.0);
     } else if num > 1000.0 {
         result_text = format!("{:.2}K", num / 1000.0);
     }
 
-    // Ok(result_num);
     Ok(result_text)
 }
 
