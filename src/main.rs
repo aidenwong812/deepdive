@@ -115,11 +115,9 @@ async fn get_top_50_holders(
         .await
         .unwrap();
 
-    println!("@@@@: {:?}", response);
     let text = response.text().await.unwrap();
     match serde_json::from_str(&text) {
         Ok(obj) => {
-            println!("@@@@@@: {:?}", obj);
             Ok(obj)
         }
         Err(e) => Err(e),
