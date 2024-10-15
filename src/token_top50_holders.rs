@@ -8,7 +8,6 @@ pub struct TokenTopHolders {
     pub holders_count: i32,
 }
 
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct HolderInfo {
     #[serde(rename = "holderAddress")]
