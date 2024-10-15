@@ -29,8 +29,6 @@ enum Command {
     Start,
     #[command(description = "Get token overview\n\tEntry type: /s ****(token address)")]
     S,
-    #[command(description = "Send the web app")]
-    Jito,
 }
 
 #[tokio::main]
@@ -330,10 +328,6 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
                         .await?
                 }
             }
-        }
-        Command::Jito => {
-            bot.send_message(msg.chat.id, "Welcome to HyperLoop! 🎉")
-                .await?
         }
     };
 
