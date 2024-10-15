@@ -9,13 +9,6 @@ pub struct TokenTopHolders {
 }
 
 // #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// // #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-// pub struct TokenContents {
-//     pub holders: Vec<HolderInfo>,
-
-// }
-
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct HolderInfo {
     #[serde(rename = "holderAddress")]
