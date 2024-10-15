@@ -5,17 +5,17 @@ pub mod token_top50_holders;
 use dotenv::dotenv;
 use log::{error, info};
 use reqwest::Client;
+use serde_json;
 use std::env;
 use teloxide::{
     prelude::*,
     types::{Me, MessageKind},
     utils::command::BotCommands,
 };
-use tokio::time;
-use serde_json;
 use token_overview::{TokenOverview, TokenOverviewData};
 use token_social::TokenSocial;
 use token_top50_holders::TokenTopHolders;
+use tokio::time;
 
 #[derive(BotCommands, Clone)]
 #[command(
@@ -79,7 +79,11 @@ async fn get_token_overview(token_address: &str) -> Result<TokenOverview, serde_
     }
 }
 
-async fn get_token_social_link(client: Client, api_key:&str, token_address: &str) -> Result<TokenSocial, serde_json::Error> {
+async fn get_token_social_link(
+    client: Client,
+    api_key: &str,
+    token_address: &str,
+) -> Result<TokenSocial, serde_json::Error> {
     let url = format!(
         "https://api.blockberry.one/sui/v1/coins/metadata/{}",
         token_address
@@ -99,9 +103,13 @@ async fn get_token_social_link(client: Client, api_key:&str, token_address: &str
     }
 }
 
-async fn get_top_50_holders(client: Client, api_key: &str, token_address: &str) -> Result<TokenTopHolders, serde_json::Error> {
+async fn get_top_50_holders(
+    client: Client,
+    api_key: &str,
+    token_address: &str,
+) -> Result<TokenTopHolders, serde_json::Error> {
     let url = format!("https://api.blockberry.one/sui/v1/coins/{}/holders?page=0&size=50&orderBy=DESC&sortBy=AMOUNT", token_address);
-   
+
     let response = client
         .get(&url)
         .header("X-API-KEY", api_key)
@@ -109,34 +117,21 @@ async fn get_top_50_holders(client: Client, api_key: &str, token_address: &str) 
         .await
         .unwrap();
 
+    println!("@@@@: {:?}", response);
     let text = response.text().await.unwrap();
     match serde_json::from_str(&text) {
-        Ok(obj) => Ok(obj),
+        Ok(obj) => {
+            println!("@@@@@@: {:?}", obj);
+            Ok(obj)
+        }
         Err(e) => Err(e),
     }
-
 }
-
-// async fn get_token_creation_info(token_address: &str, api_key: &str) -> Result<TokenOverview, reqwest::Error> {
-//     let url = format!("https://public-api.birdeye.so/defi/token_creation_info?address={}", token_address);
-//     let client = Client::new();
-
-//     let response = client
-//         .get(&url)
-//         .header("X-API-KEY", api_key)
-//         .header("x-chain", "sui")
-//         .send()
-//         .await?;
-//     let text = response.text().await.expect("Not available to get response body");
-//     let object: TokenOverview = serde_json::from_str(&text).expect("Invalid response parameters!!");
-
-//     Ok(object)
-// }
 
 async fn make_token_overview_message(
     token_data: &TokenOverviewData,
     token_socials: &TokenSocial,
-    token_holders: &TokenTopHolders
+    token_holders: &TokenTopHolders,
 ) -> Result<String, reqwest::Error> {
     let token_address = &token_data.address;
     let name = &token_data.name;
@@ -177,38 +172,78 @@ async fn make_token_overview_message(
 
     //tokenSocail
     let social_website = token_socials.social_website.clone().unwrap_or_default();
-    let social_discord = token_socials.social_discord.clone().unwrap();
+    let social_discord = token_socials.social_discord.clone().unwrap_or_default();
     let social_telegram = token_socials.social_telegram.clone().unwrap_or_default();
-    let social_twitter = token_socials.social_twitter.clone().unwrap();
+    let social_twitter = token_socials.social_twitter.clone().unwrap_or_default();
 
     //top holders Info
     let holders_count = token_holders.holders_count;
+    let mut sum_top_10_holders = 0.0;
+    let mut percentage_of_sum_top_10_holders = 0.0;
+    let mut holders_text = String::from("");
+    let mut top_num = 0;
     let mut index_on_a_line = 0;
     let mut num_whale = 0;
     let mut num_largefish = 0;
     let mut num_bigfish = 0;
     let mut num_smallfish = 0;
     let mut num_shrimp = 0;
-    let mut holders_text = String::from("");
     for holder in &(token_holders.content) {
-        index_on_a_line += 1;
         let holder_address = &holder.holder_address;
-        let holder_usd_amount = holder.usd_amount;
         let holder_stock_percentage = holder.percentage;
+        match holder.usd_amount {
+            Some(amount) => {
+                let mut whale_symbol = String::from("🐳");
+                top_num += 1;
+                if top_num <= 10 {
+                    sum_top_10_holders += amount;
+                    percentage_of_sum_top_10_holders += holder_stock_percentage;
+                }
 
-        let mut symbol = String::from("");
-        if holder_usd_amount > 100000.0 { symbol = format!("🐳"); num_whale += 1; }
-        else if holder_usd_amount > 50000.0  {symbol = format!("🦈"); num_largefish += 1; }
-        else if holder_usd_amount > 10000.0  {symbol = format!("🐬"); num_bigfish += 1; }
-        else if holder_usd_amount > 1000.0  {symbol = format!("🐟"); num_smallfish += 1; }
-        else { symbol = format!("🦐"); num_shrimp += 1; }
+                if amount > 1000.0 {
+                    whale_symbol = format!("🐳");
+                    num_whale += 1;
+                } else if amount > 50000.0 {
+                    whale_symbol = format!("🦈");
+                    num_largefish += 1;
+                } else if amount > 10000.0 {
+                    whale_symbol = format!("🐬");
+                    num_bigfish += 1;
+                } else if amount > 1000.0 {
+                    whale_symbol = format!("🐟");
+                    num_smallfish += 1;
+                } else {
+                    whale_symbol = format!("🦐");
+                    num_shrimp += 1;
+                }
 
-        let link = format!("<a href=\"https://suiscan.xyz/mainnet/account/{holder_address}?percentage={holder_stock_percentage}\"> {symbol} </a>");
-        if index_on_a_line == 10 { holders_text = holders_text + &link + "\n"; index_on_a_line = 0; }
-        else { holders_text = holders_text + &link; }
+                let link = format!("<a href=\"https://suiscan.xyz/mainnet/account/{holder_address}?percentage={holder_stock_percentage}\">{whale_symbol}</a>");
+                if index_on_a_line == 9 {
+                    holders_text = holders_text + &link + "\n";
+                    index_on_a_line = 0;
+                } else {
+                    holders_text = holders_text + &link;
+                    index_on_a_line += 1;
+                }
 
+                if top_num == token_holders.content.len() {
+                    holders_text += &format!("
+                    \n🐳 ( > $100K ) :  {num_whale}\n🦈 ( $50K - $100K ) :  {num_largefish}\n🐬 ( $10K - $50K ) :  {num_bigfish}\n🐟 ( $1K - $10K ) :  {num_smallfish}\n🦐 ( $0 - $1K ) :  {num_shrimp}\n
+                    ");
+                }
+            }
+            None => {
+                holders_text = String::from("");
+            }
+        }
     }
-    
+
+    let sum_top_10_holders_percent =
+        num_floating_point(&percentage_of_sum_top_10_holders, 3).await?;
+    let sum_top_10_holders = controll_big_float(sum_top_10_holders)
+        .await
+        .unwrap_or_default();
+
     let text = format!("
 ⛓ SUI
 
@@ -229,14 +264,9 @@ async fn make_token_overview_message(
         1h:  {buy_trade_1h} / {sell_trade_1h}   |   24h:  {buy_trade_24h} / {sell_trade_24h}
 
 🧳 Holders:  {holders_count}
+        └ Top 10 Holders :  {sum_top_10_holders}  ({sum_top_10_holders_percent}%)
 
 {holders_text}
-🐳 ( > $100K ) :  {num_whale}
-🦈 ( $50K - $100K ) :  {num_largefish}
-🐬 ( $10K - $50K ) :  {num_bigfish}
-🐟 ( $1K - $10K ) :  {num_smallfish}
-🦐 ( $0 - $1K ) :  {num_shrimp}
-
 ❎ <a href=\"https://twitter.com/search?q={token_address}=typed_query&f=live\"> Search on 𝕏 </a>
 
 📈 <a href=\"https://dexscreener.com/sui/{token_address}\"> DexS </a>
@@ -266,15 +296,30 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
             match get_token_overview(&token_adr).await {
                 Ok(token_overview) => {
                     let blockberry_client = Client::new();
-                    let blockberry_api_key = env::var("Blockberry_API_KEY").expect("API_KEY not set");
-                    let token_social = get_token_social_link(blockberry_client.clone(), &blockberry_api_key, &token_adr).await.unwrap();
-                    
-                    tokio::time::sleep(time::Duration::from_secs(3)).await;  //delay for 3 sec to avoid conflict request
+                    let blockberry_api_key =
+                        env::var("Blockberry_API_KEY").expect("API_KEY not set");
+                    let token_social = get_token_social_link(
+                        blockberry_client.clone(),
+                        &blockberry_api_key,
+                        &token_adr,
+                    )
+                    .await
+                    .unwrap();
 
-                    let token_holders = get_top_50_holders(blockberry_client.clone(), &blockberry_api_key, &token_adr).await.unwrap();
-                    
+                    tokio::time::sleep(time::Duration::from_secs(3)).await; //delay for 3 sec to avoid conflict request
+
+                    let token_holders = get_top_50_holders(
+                        blockberry_client.clone(),
+                        &blockberry_api_key,
+                        &token_adr,
+                    )
+                    .await
+                    .unwrap_or_default();
+
                     let token_data = token_overview.data;
-                    let text = make_token_overview_message(&token_data, &token_social, &token_holders).await?;
+                    let text =
+                        make_token_overview_message(&token_data, &token_social, &token_holders)
+                            .await?;
                     bot.send_message(msg.chat.id, text)
                         .parse_mode(teloxide::types::ParseMode::Html)
                         .await?
@@ -316,12 +361,11 @@ async fn num_floating_point(num: &f64, length: i32) -> Result<f64, reqwest::Erro
 }
 
 async fn controll_big_float(num: f64) -> Result<String, reqwest::Error> {
-    let mut result_text = String::from("");
-    if num > 1000000.0 {
-        result_text = format!("{:.1}M", num / 1000000.0);
+    Ok(if num > 1000000.0 {
+        format!("{:.1}M", num / 1000000.0)
     } else if num > 1000.0 {
-        result_text = format!("{:.2}K", num / 1000.0);
-    }
-
-    Ok(result_text)
+        format!("{:.2}K", num / 1000.0)
+    } else {
+        format!("{:.3}", num)
+    })
 }
