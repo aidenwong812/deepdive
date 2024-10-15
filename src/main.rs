@@ -231,17 +231,16 @@ async fn make_token_overview_message(
 🧳 Holders:  {holders_count}
 
 {holders_text}
-🐳 (> $100K): {num_whale}
-🦈 ($50K - $100K): {num_largefish}
-🐬 ($10K - $50K): {num_bigfish}
-🐟 ($1K - $10K): {num_smallfish}
-🦐 ($0 - $1K): {num_shrimp}
-
-⏳ Age: 154d 5h 3m
+🐳 ( > $100K ) :  {num_whale}
+🦈 ( $50K - $100K ) :  {num_largefish}
+🐬 ( $10K - $50K ) :  {num_bigfish}
+🐟 ( $1K - $10K ) :  {num_smallfish}
+🦐 ( $0 - $1K ) :  {num_shrimp}
 
 ❎ <a href=\"https://twitter.com/search?q={token_address}=typed_query&f=live\"> Search on 𝕏 </a>
 
-��<a href=\"https://dexscreener.com/sui/{token_address}\"> DexS </a>
+📈 <a href=\"https://dexscreener.com/sui/{token_address}\"> DexS </a>
+
 ");
 
     Ok(text)
