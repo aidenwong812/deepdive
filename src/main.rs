@@ -15,7 +15,7 @@ use tokio::time;
 use serde_json;
 use token_overview::{TokenOverview, TokenOverviewData};
 use token_social::TokenSocial;
-use token_top50_holders::{HolderInfo, TokenTopHolders};
+use token_top50_holders::TokenTopHolders;
 
 #[derive(BotCommands, Clone)]
 #[command(
