@@ -1,9 +1,12 @@
 pub mod token_overview;
 pub mod token_social;
 pub mod token_top50_holders;
+pub mod token_denonimation;
 
+use tokio::time;
 use dotenv::dotenv;
 use log::{error, info};
+use chrono::{Utc, Duration, TimeZone};
 use reqwest::Client;
 use serde_json;
 use std::env;
@@ -15,7 +18,8 @@ use teloxide::{
 use token_overview::{TokenOverview, TokenOverviewData};
 use token_social::TokenSocial;
 use token_top50_holders::TokenTopHolders;
-use tokio::time;
+use token_denonimation::TokenDenonimation;
+
 
 #[derive(BotCommands, Clone)]
 #[command(
@@ -124,10 +128,35 @@ async fn get_top_50_holders(
     }
 }
 
+async fn get_coin_denonimation(
+    client: Client,
+    api_key: &str,
+    token_address: &str
+) -> Result<TokenDenonimation, serde_json::Error> {
+    let url = format!("https://api.blockberry.one/sui/v1/coins/{}", token_address);
+    let response = client
+        .get(&url)
+        .header("X-API-KEY", api_key)
+        .send()
+        .await
+        .unwrap();
+
+    let text = response.text().await.unwrap();
+    match serde_json::from_str(&text) {
+        Ok(obj) => {
+            println!("{:?}", obj);
+            Ok(obj)
+        }
+        Err(e) => Err(e),
+    }
+    
+}
+
 async fn make_token_overview_message(
     token_data: &TokenOverviewData,
     token_socials: &TokenSocial,
     token_holders: &TokenTopHolders,
+    token_denonimation: &TokenDenonimation
 ) -> Result<String, reqwest::Error> {
     let token_address = &token_data.address;
     let name = &token_data.name;
@@ -241,6 +270,12 @@ async fn make_token_overview_message(
         .await
         .unwrap_or_default();
 
+    //toeknDenonimation
+    let create_timestamp = token_denonimation.create_time_stamp.unwrap();
+    println!("@@@{:?}", create_timestamp);
+    let age = calculate_age(create_timestamp);
+   
+
     let text = format!("
 ⛓ SUI
 
@@ -262,6 +297,7 @@ async fn make_token_overview_message(
 
 🧳 Holders:  {holders_count}
         └ Top 10 Holders :  {sum_usd_amount_top_10_holders}  ({sum_top_10_holders_percent}%)
+⏳ Age: {age}
 
 {holders_text}
 ❎ <a href=\"https://twitter.com/search?q={token_address}=typed_query&f=live\"> Search on 𝕏 </a>
@@ -304,8 +340,17 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
                     .unwrap();
 
                     tokio::time::sleep(time::Duration::from_secs(3)).await; //delay for 3 sec to avoid conflict request
-
+                    
                     let token_holders = get_top_50_holders(
+                        blockberry_client.clone(),
+                        &blockberry_api_key,
+                        &token_adr,
+                    )
+                    .await
+                    .unwrap_or_default();
+                
+                    tokio::time::sleep(time::Duration::from_secs(3)).await; //delay for 3 sec to avoid conflict request
+                    let token_denonimation = get_coin_denonimation(
                         blockberry_client.clone(),
                         &blockberry_api_key,
                         &token_adr,
@@ -315,7 +360,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 
                     let token_data = token_overview.data;
                     let text =
-                        make_token_overview_message(&token_data, &token_social, &token_holders)
+                        make_token_overview_message(&token_data, &token_social, &token_holders, &token_denonimation)
                             .await?;
                     bot.send_message(msg.chat.id, text)
                         .parse_mode(teloxide::types::ParseMode::Html)
@@ -361,4 +406,13 @@ async fn controll_big_float(num: f64) -> Result<String, reqwest::Error> {
     } else {
         format!("{:.3}", num)
     })
+}
+
+fn calculate_age(create_timestamp: i64) -> String {
+    let now = Utc::now();
+    let create_date = Utc.timestamp_millis_opt(create_timestamp).unwrap();
+    println!("{}", create_date);
+    let duration = now.signed_duration_since(create_date);
+    println!("12@@: {:?}", duration);
+    format!("{}d {}h {}m", duration.num_days(), duration.num_hours() % 24, duration.num_minutes() % 60)
 }
