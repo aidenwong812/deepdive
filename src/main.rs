@@ -272,7 +272,6 @@ async fn make_token_overview_message(
 
     //toeknDenonimation
     let create_timestamp = token_denonimation.create_time_stamp.unwrap();
-    println!("@@@{:?}", create_timestamp);
     let age = calculate_age(create_timestamp);
    
 
@@ -411,8 +410,6 @@ async fn controll_big_float(num: f64) -> Result<String, reqwest::Error> {
 fn calculate_age(create_timestamp: i64) -> String {
     let now = Utc::now();
     let create_date = Utc.timestamp_millis_opt(create_timestamp).unwrap();
-    println!("{}", create_date);
     let duration = now.signed_duration_since(create_date);
-    println!("12@@: {:?}", duration);
     format!("{}d {}h {}m", duration.num_days(), duration.num_hours() % 24, duration.num_minutes() % 60)
 }
