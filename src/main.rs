@@ -285,11 +285,11 @@ async fn make_token_overview_message(
 {token_address}
 ➖➖➖➖➖➖
 
-🏷 Price: ${price}
-💧 Liq: ${liquidity} 
+🏷 Price:  ${price}
+💧 Liq:  ${liquidity} 
 
 📉 Price Changes:
-        1h: {price_change_1h_percent}%   |   6h: {price_change_6h_percent}%   |   24h: {price_change_24h_percent}%
+        1h:  {price_change_1h_percent}%   |   6h:  {price_change_6h_percent}%   |   24h:  {price_change_24h_percent}%
 🎚 Volume:
         1h:  ${volume_1h}  |  6h:  ${volume_6h}  |  24h:  ${volume_24h}
 🔄 Buys / Sells:
@@ -297,7 +297,7 @@ async fn make_token_overview_message(
 
 🧳 Holders:  {holders_count}
         └ Top 10 Holders :  {sum_usd_amount_top_10_holders}  ({sum_top_10_holders_percent}%)
-⏳ Age: {age}
+⏳ Age:  {age}
 
 {holders_text}
 ❎ <a href=\"https://twitter.com/search?q={token_address}=typed_query&f=live\"> Search on 𝕏 </a>
