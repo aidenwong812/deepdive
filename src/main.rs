@@ -219,7 +219,7 @@ async fn make_token_overview_message(
                     sum_top_10_holders_percent += holder.percentage;
                 }
 
-                if usd_amount > 1000.0 {
+                if usd_amount > 100000.0 {
                     whale_symbol = format!("🐳");
                     num_whale += 1;
                 } else if usd_amount > 50000.0 {
@@ -263,8 +263,7 @@ async fn make_token_overview_message(
     let social_telegram = token_socials.social_telegram.clone().unwrap_or_default();
     let social_twitter = token_socials.social_twitter.clone().unwrap_or_default();
 
-    // let sum_top_10_holders_percent =
-    //     num_floating_point(&(sum_amount_top_10_holders / total_supply), 3).await?;
+    let sum_top_10_holders_percent = num_floating_point(&sum_top_10_holders_percent, 3).await?;
     let sum_usd_amount_top_10_holders = controll_big_float(sum_usd_amount_top_10_holders)
         .await
         .unwrap_or_default();
@@ -283,10 +282,10 @@ async fn make_token_overview_message(
    
 
     let text = format!("
-⛓ SUI
+⛓  SUI
 
-🪙 <a href=\"{social_website}\">{name}</a>  ({symbol})
-👥 Socials: <a href=\"{social_discord}\">🌐</a> <a href=\"{social_telegram}\">💬</a> <a href=\"{social_twitter}\">𝕏</a>
+🪙  <a href=\"{social_website}\">{name}</a>  ({symbol})
+👥  Socials: <a href=\"{social_discord}\">🌐</a> <a href=\"{social_telegram}\">💬</a> <a href=\"{social_twitter}\">𝕏</a>
 
 {token_address}
 ➖➖➖➖➖➖
@@ -295,21 +294,20 @@ async fn make_token_overview_message(
 🏷  Price:  ${price}
 💧  Liq:  ${liquidity} 
 
-📉 Price Changes:
+📉  Price Changes:
         1h:  {price_change_1h_percent}%   |   6h:  {price_change_6h_percent}%   |   24h:  {price_change_24h_percent}%
-🎚 Volume:
+🎚  Volume:
         1h:  ${volume_1h}  |  6h:  ${volume_6h}  |  24h:  ${volume_24h}
-🔄 Buys / Sells:
+🔄  Buys / Sells:
         1h:  {buy_trade_1h} / {sell_trade_1h}   |   24h:  {buy_trade_24h} / {sell_trade_24h}
 
-🧳 Holders:  {holders_count}
+🧳  Holders:  {holders_count}
         └ Top 10 Holders :  {sum_usd_amount_top_10_holders}  ({sum_top_10_holders_percent}%)
-⏳ Age:  {age}
+⏳  Age:  {age}
 {holders_text}
 ❎ <a href=\"https://twitter.com/search?q={token_address}=typed_query&f=live\"> Search on 𝕏 </a>
 
 📈 <a href=\"https://dexscreener.com/sui/{token_address}\"> DexS </a>
-
 ");
 
     Ok(text)
