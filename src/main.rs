@@ -6,7 +6,7 @@ pub mod token_denonimation;
 use tokio::time;
 use dotenv::dotenv;
 use log::{error, info};
-use chrono::{Utc, Duration, TimeZone};
+use chrono::{Utc, TimeZone};
 use reqwest::Client;
 use serde_json;
 use std::env;
@@ -144,12 +144,10 @@ async fn get_coin_denonimation(
     let text = response.text().await.unwrap();
     match serde_json::from_str(&text) {
         Ok(obj) => {
-            println!("{:?}", obj);
             Ok(obj)
         }
         Err(e) => Err(e),
-    }
-    
+    }    
 }
 
 async fn make_token_overview_message(
@@ -198,7 +196,7 @@ async fn make_token_overview_message(
     //top holders Info
     let holders_count = token_holders.holders_count;
     let mut sum_usd_amount_top_10_holders = 0.0;
-    let mut holders_text = String::from("");
+    let mut holders_text = String::from("\n");
     let mut top_num = 0;
     let mut index_on_a_line = 0;
     let mut num_whale = 0;
@@ -206,7 +204,8 @@ async fn make_token_overview_message(
     let mut num_bigfish = 0;
     let mut num_smallfish = 0;
     let mut num_shrimp = 0;
-    let mut sum_amount_top_10_holders = 0.0;
+    // let mut sum_amount_top_10_holders = 0.0;
+    let mut sum_top_10_holders_percent = 0.0;
     for holder in &(token_holders.content) {
         let holder_address = &holder.holder_address;
         let holder_stock_percentage = holder.percentage;
@@ -216,7 +215,8 @@ async fn make_token_overview_message(
                 top_num += 1;
                 if top_num <= 10 {
                     sum_usd_amount_top_10_holders += usd_amount;
-                    sum_amount_top_10_holders += holder.amount;
+                    // sum_amount_top_10_holders += holder.amount;
+                    sum_top_10_holders_percent += holder.percentage;
                 }
 
                 if usd_amount > 1000.0 {
@@ -246,9 +246,7 @@ async fn make_token_overview_message(
                 }
 
                 if top_num == token_holders.content.len() {
-                    holders_text += &format!("
-                    \n🐳 ( > $100K ) :  {num_whale}\n🦈 ( $50K - $100K ) :  {num_largefish}\n🐬 ( $10K - $50K ) :  {num_bigfish}\n🐟 ( $1K - $10K ) :  {num_smallfish}\n🦐 ( $0 - $1K ) :  {num_shrimp}\n
-                    ");
+                    holders_text += &format!("\n🐳 ( > $100K ) :  {num_whale}\n🦈 ( $50K - $100K ) :  {num_largefish}\n🐬 ( $10K - $50K ) :  {num_bigfish}\n🐟 ( $1K - $10K ) :  {num_smallfish}\n🦐 ( $0 - $1K ) :  {num_shrimp}\n");
                 }
             }
             None => {
@@ -259,13 +257,14 @@ async fn make_token_overview_message(
 
     //tokenSocail
     let total_supply = token_socials.total_supply.unwrap_or_default();
+    let fdv = controll_big_float(price * total_supply).await?;
     let social_website = token_socials.social_website.clone().unwrap_or_default();
     let social_discord = token_socials.social_discord.clone().unwrap_or_default();
     let social_telegram = token_socials.social_telegram.clone().unwrap_or_default();
     let social_twitter = token_socials.social_twitter.clone().unwrap_or_default();
 
-    let sum_top_10_holders_percent =
-        num_floating_point(&(sum_amount_top_10_holders / total_supply), 3).await?;
+    // let sum_top_10_holders_percent =
+    //     num_floating_point(&(sum_amount_top_10_holders / total_supply), 3).await?;
     let sum_usd_amount_top_10_holders = controll_big_float(sum_usd_amount_top_10_holders)
         .await
         .unwrap_or_default();
@@ -273,6 +272,14 @@ async fn make_token_overview_message(
     //toeknDenonimation
     let create_timestamp = token_denonimation.create_time_stamp.unwrap();
     let age = calculate_age(create_timestamp);
+    let mut mcap = String::from("");
+    match token_denonimation.circulating_supply {
+        Some(circulating_supply) => {
+            let market_cap = controll_big_float(circulating_supply * price).await.unwrap();
+            mcap += &format!("mcap:  ${} |   ", market_cap); }
+        None => {mcap = String::from("");}
+    };
+
    
 
     let text = format!("
@@ -284,8 +291,9 @@ async fn make_token_overview_message(
 {token_address}
 ➖➖➖➖➖➖
 
-🏷 Price:  ${price}
-💧 Liq:  ${liquidity} 
+📊  {mcap}fdv:  ${fdv}
+🏷  Price:  ${price}
+💧  Liq:  ${liquidity} 
 
 📉 Price Changes:
         1h:  {price_change_1h_percent}%   |   6h:  {price_change_6h_percent}%   |   24h:  {price_change_24h_percent}%
@@ -297,7 +305,6 @@ async fn make_token_overview_message(
 🧳 Holders:  {holders_count}
         └ Top 10 Holders :  {sum_usd_amount_top_10_holders}  ({sum_top_10_holders_percent}%)
 ⏳ Age:  {age}
-
 {holders_text}
 ❎ <a href=\"https://twitter.com/search?q={token_address}=typed_query&f=live\"> Search on 𝕏 </a>
 

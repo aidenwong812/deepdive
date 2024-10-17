@@ -4,6 +4,11 @@ use serde::{Serialize, Deserialize};
 pub struct TokenDenonimation {
     #[serde(rename = "createTimestamp")]
     pub create_time_stamp: Option<i64>,
+    pub fdv: Option<f64>,
+    pub supply: Option<f64>,
+    #[serde(rename = "circulatingSupply")]
+    pub circulating_supply: Option<f64>,
+    
 }
 
 //     "coinType": "0xe152cf4590affa8e187f98a4d31bba396e7922ae45c2c7c59b4575742dfde196::sui::SUI",
