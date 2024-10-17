@@ -236,7 +236,7 @@ async fn make_token_overview_message(
                     num_shrimp += 1;
                 }
 
-                let link = format!("<a href=\"https://suiscan.xyz/mainnet/account/{holder_address}?percentage={holder_stock_percentage}\">{whale_symbol}</a>");
+                let link = format!("<a href=\"https://suiscan.xyz/mainnet/account/{holder_address}?percentage={holder_stock_percentage}&Amount={usd_amount}\">{whale_symbol}</a>");
                 if index_on_a_line == 9 {
                     holders_text = holders_text + &link + "\n";
                     index_on_a_line = 0;
